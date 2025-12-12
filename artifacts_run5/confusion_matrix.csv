@@ -1,0 +1,21 @@
+,Agreement Date,Agreement Date-Answer,Anti-assignment,Audit Rights,Cap on Liability,Document Name,Effective Date,Effective Date-Answer,Exclusivity,Expiration Date,Expiration Date-Answer,Governing Law,Insurance,License Grant,Parties,Parties-Answer,Post-termination Services,Renewal Term,Revenue-Profit Sharing,Termination for Convenience
+Agreement Date,55,0,0,0,0,1,14,0,0,0,0,0,0,0,0,0,0,0,0,0
+Agreement Date-Answer,0,0,0,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,0,0
+Anti-assignment,0,0,52,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2
+Audit Rights,0,0,0,31,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0
+Cap on Liability,0,0,1,0,34,0,0,0,2,0,0,0,0,0,0,0,3,0,1,0
+Document Name,1,0,0,0,0,43,1,0,0,0,0,0,0,0,0,1,0,0,0,0
+Effective Date,34,0,0,0,0,0,20,0,0,4,0,0,0,0,0,0,0,0,0,0
+Effective Date-Answer,0,0,0,0,0,0,0,0,0,0,49,0,0,0,0,0,0,0,0,0
+Exclusivity,0,0,1,0,0,0,0,0,22,0,0,0,0,4,0,0,0,0,0,0
+Expiration Date,0,0,0,0,0,0,5,0,0,44,0,0,0,1,0,0,1,8,0,3
+Expiration Date-Answer,0,0,0,0,0,0,0,0,0,0,37,0,0,0,0,0,0,0,0,0
+Governing Law,0,0,0,0,0,0,0,0,0,0,0,66,0,0,0,0,0,0,0,0
+Insurance,0,0,0,0,0,0,0,0,0,0,0,0,23,0,0,0,1,0,1,0
+License Grant,0,0,0,0,1,0,0,0,9,0,0,0,0,27,0,0,1,0,0,0
+Parties,0,0,0,0,0,0,0,0,0,0,0,0,0,0,76,0,0,0,0,0
+Parties-Answer,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,75,0,0,0,0
+Post-termination Services,0,0,1,3,0,0,0,0,2,2,0,0,0,0,0,0,18,1,0,0
+Renewal Term,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,23,0,1
+Revenue-Profit Sharing,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,1,0,22,0
+Termination for Convenience,0,0,0,0,0,0,0,0,1,1,0,0,0,2,0,0,1,1,0,21

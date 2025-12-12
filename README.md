@@ -10,13 +10,6 @@
 
 ---
 
-## Why Deep Learning?
-- Captures sequential context in clauses
-- Handles varied phrasing across contracts
-- Learns beyond keyword lookup
-
----
-
 ## Solution
 - **Model**: 2-layer BiLSTM with attention pooling and dropout
 - **Tokenization**: Custom tokenizer (10k vocab), max length 11 tokens (85th percentile of filtered snippets)
@@ -34,25 +27,23 @@ Linear → 7 classes
 ---
 
 ## Dataset
-- Source: CUAD v1 `master_clauses.csv` (flattened snippets)
-- Total snippets: 1,899 after filtering
-- Classes: 7 clause types (min 5 samples each)
-- Vocab: ~2.6k; OOV: 0%; Max length: 11 tokens
+- Source: CUAD v1 `label_group_xlsx/` sheets (flattened columns → rows of `context, clause_type`)
+- Filtering: keep classes with ≥5 samples (no TOP_N cap recommended); optional synonym augmentation to lift low-support labels
+- Tokenization: custom vocab (~2.6k+ words observed), 85th-percentile length → max pad length 11
+- Note: `openpyxl` is required for XLSX loading; `nltk`+WordNet used only if augmentation is enabled
 
 ---
 
 ## Training & Tuning
 - Split: 70/15/15 stratified (train/val/test)
-- Optimizers tried (batch 64, epochs 25, patience 6):
-  - Adam lr ∈ {5e-4, 8e-4, 1e-3}, wd=1e-4
-  - RMSprop lr=8e-4
-- Schedulers: ReduceLROnPlateau (factor 0.5, patience 2)
-- Gradient clipping: max norm 1.0
+- Optimizers in notebook: Adam/RMSprop (5–8e-4), batch 64, epochs 5 (adjust upward for full runs), patience 6, ReduceLROnPlateau (0.5, 2), grad clip 1.0
+- Class handling: weights + optional weighted sampler; optional synonym augmentation via WordNet
 
-### Results (run2)
-- Best: RMSprop lr=8e-4 → **Test accuracy ≈ 57.9%** (meets 50% target)
-- Per-class: strong on Parties / Document Name / Renewal Term; weak on Agreement Date / Effective Date; moderate on Governing Law; Expiration Date captured via overlap.
-- Artifacts: `artifacts_run2/` holds tokenizer, label classes, confusion matrix, classification report; models in `trained_models_run2/`; results in `experiment_results_run2.csv`.
+### Results (runs 1–5)
+- Run2 (CSV pipeline, tuned): best test acc ≈ 74.3% (RMSprop lr=8e-4, batch 64); metrics in `experiment_results_run2.csv`; artifacts in `artifacts_run2/`; models in `trained_models_run2/`.
+- Run3 (tokenizer/artifacts saved): models/artifacts present (`trained_models_run3/`, `artifacts_run3/`); metrics CSV not recorded.
+- Run4 (current XLSX pipeline): models/artifacts present (`trained_models_run4/`, `artifacts_run4/`); results CSV still named `experiment_results_run2.csv` in the notebook—rename if you rerun.
+- Run5 (extra sweep scaffolded): artifacts folder exists (`artifacts_run5/`); metrics CSV not recorded.
 
 ---
 
@@ -62,16 +53,18 @@ Linear → 7 classes
 ---
 
 ## How to Run
-1) Install deps:
+1) Install deps (XLSX + optional augmentation):
 ```bash
-pip install torch numpy pandas scikit-learn h5py
+pip install torch numpy pandas scikit-learn h5py openpyxl nltk
 ```
+If using augmentation, download NLTK data inside the notebook (`nltk.download('wordnet'); nltk.download('omw-1.4')`).
+
 2) Open and run `Untitled-6.ipynb` end-to-end. It will:
-   - Load `master_clauses.csv`
-   - Clean/tokenize, split, and train the BiLSTM+attention
-   - Save models to `trained_models_run2/`
-   - Save metrics to `experiment_results_run2.csv`
-   - Save artifacts to `artifacts_run2/`
+  - Load XLSX snippets from `CUAD_v1/label_group_xlsx/`
+  - Clean, optionally augment low-support classes, tokenize, split, and train the BiLSTM+attention
+  - Save models to `trained_models_run4/` (current run tag)
+  - Save metrics to `experiment_results_run2.csv` (legacy name—adjust if desired)
+  - Save artifacts to `artifacts_run4/`
 
 ---
 
@@ -81,9 +74,9 @@ ANNFINAL/
 ├── Untitled-6.ipynb          # Main PyTorch notebook
 ├── w.ipynb                   # Keras reference notebook
 ├── README.md
-├── experiment_results_run2.csv
-├── trained_models_run2/      # Saved PyTorch checkpoints (.pt, .h5)
-├── artifacts_run2/           # Tokenizer, labels, confusion matrix, reports
+├── experiment_results_run2.csv  # Legacy results file name (used by notebook)
+├── trained_models_run4/         # Saved PyTorch checkpoints (.pt, .h5) for current run tag
+├── artifacts_run4/              # Tokenizer, labels, confusion matrix, reports (current)
 ├── trained_models/           # Prior run models
 ├── artifacts/               # Prior run artifacts
 └── CUAD_v1/
