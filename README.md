@@ -13,7 +13,7 @@
 ## Solution
 - **Model**: 2-layer BiLSTM with attention pooling and dropout
 - **Tokenization**: Custom tokenizer (10k vocab), max length 11 tokens (85th percentile of filtered snippets)
-- **Balancing**: Class weights + optional sampler
+- **Balancing**: Class weights + optional sampler; optional synonym augmentation for low-support classes
 - **Framework**: PyTorch
 
 ### Architecture
@@ -28,22 +28,22 @@ Linear → 7 classes
 
 ## Dataset
 - Source: CUAD v1 `label_group_xlsx/` sheets (flattened columns → rows of `context, clause_type`)
-- Filtering: keep classes with ≥5 samples (no TOP_N cap recommended); optional synonym augmentation to lift low-support labels
+- Filtering: keep classes with ≥5 samples (TOP_N=20 cap in notebook); optional synonym augmentation to lift low-support labels
 - Tokenization: custom vocab (~2.6k+ words observed), 85th-percentile length → max pad length 11
-- Note: `openpyxl` is required for XLSX loading; `nltk`+WordNet used only if augmentation is enabled
+- Notes: `openpyxl` required for XLSX loading; `nltk`+WordNet used only if augmentation is enabled
 
 ---
 
 ## Training & Tuning
 - Split: 70/15/15 stratified (train/val/test)
-- Optimizers in notebook: Adam/RMSprop (5–8e-4), batch 64, epochs 5 (adjust upward for full runs), patience 6, ReduceLROnPlateau (0.5, 2), grad clip 1.0
+- Optimizers in notebook (run5 sweep): Adam/RMSprop (lr 5e-4–1e-3), batch 64, epochs 5–10, patience 6, ReduceLROnPlateau (0.5, 2), grad clip 1.0
 - Class handling: weights + optional weighted sampler; optional synonym augmentation via WordNet
 
 ### Results (runs 1–5)
-- Run2 (CSV pipeline, tuned): best test acc ≈ 74.3% (RMSprop lr=8e-4, batch 64); metrics in `experiment_results_run2.csv`; artifacts in `artifacts_run2/`; models in `trained_models_run2/`.
-- Run3 (tokenizer/artifacts saved): models/artifacts present (`trained_models_run3/`, `artifacts_run3/`); metrics CSV not recorded.
-- Run4 (current XLSX pipeline): models/artifacts present (`trained_models_run4/`, `artifacts_run4/`); results CSV still named `experiment_results_run2.csv` in the notebook—rename if you rerun.
-- Run5 (extra sweep scaffolded): artifacts folder exists (`artifacts_run5/`); metrics CSV not recorded.
+- Run2 (CSV pipeline, tuned): best test acc ≈ 74.3% in run2 (RMSprop lr=8e-4, batch 64); metrics in `experiment_results_run2.csv`; artifacts in `artifacts_run2/`; models in `trained_models_run2/`.
+- Run3 (tokenizer/artifacts saved): models/artifacts present (`trained_models_run3/`, `artifacts_run3/`).
+- Run4 (current XLSX pipeline): models/artifacts present (`trained_models_run4/`, `artifacts_run4/`).
+- Run5 (extra sweep scaffolded): artifacts folder exists (`trained_models_run5/`,`artifacts_run5/`).
 
 ---
 
@@ -62,9 +62,9 @@ If using augmentation, download NLTK data inside the notebook (`nltk.download('w
 2) Open and run `Untitled-6.ipynb` end-to-end. It will:
   - Load XLSX snippets from `CUAD_v1/label_group_xlsx/`
   - Clean, optionally augment low-support classes, tokenize, split, and train the BiLSTM+attention
-  - Save models to `trained_models_run4/` (current run tag)
-  - Save metrics to `experiment_results_run2.csv` (legacy name—adjust if desired)
-  - Save artifacts to `artifacts_run4/`
+  - Save models to `trained_models_run5/` (current notebook paths)
+  - Save metrics to `experiment_results_run2.csv` (legacy name—update in notebook if you want per-run CSVs)
+  - Save artifacts to `artifacts_run5/`
 
 ---
 
@@ -74,11 +74,18 @@ ANNFINAL/
 ├── Untitled-6.ipynb          # Main PyTorch notebook
 ├── w.ipynb                   # Keras reference notebook
 ├── README.md
-├── experiment_results_run2.csv  # Legacy results file name (used by notebook)
-├── trained_models_run4/         # Saved PyTorch checkpoints (.pt, .h5) for current run tag
-├── artifacts_run4/              # Tokenizer, labels, confusion matrix, reports (current)
-├── trained_models/           # Prior run models
-├── artifacts/               # Prior run artifacts
+├── experiment_results.csv       # Early run1 metrics (low accuracy)
+├── experiment_results_run2.csv  # Run2 metrics (best ~74.3% test); also reused by later runs unless renamed
+├── trained_models_run2/         # Run2 models
+├── artifacts_run2/              # Run2 tokenizer/labels/confusion/reports
+├── trained_models_run3/         # Run3 models
+├── artifacts_run3/              # Run3 tokenizer/labels/confusion/reports
+├── trained_models_run4/         # Run4 (XLSX) models
+├── artifacts_run4/              # Run4 tokenizer/labels/confusion/reports
+├── trained_models_run5/         # Current notebook output path
+├── artifacts_run5/              # Current notebook output path
+├── trained_models/              # Prior Keras/PyTorch models
+├── artifacts/                   # Prior artifacts
 └── CUAD_v1/
     ├── CUAD_v1.json
     ├── CUAD_v1_README.txt

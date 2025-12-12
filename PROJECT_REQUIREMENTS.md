@@ -23,19 +23,17 @@
   - Layer 1: Legal terminology and phrases
   - Layer 2: Clause-level semantic patterns
 
-**Architecture Details**:
+**Architecture Details (current notebook)**:
 ```
-Embedding Layer (64 dimensions)
+Embedding Layer (200 dims)
     ↓
-Bidirectional LSTM Layer 1 (64 units × 2 directions = 128 output)
+BiLSTM Layer 1 (128 units × 2) + Dropout 0.25
     ↓
-Dropout (0.15)
+BiLSTM Layer 2 (96 units × 2)  + Dropout 0.25
     ↓
-Bidirectional LSTM Layer 2 (32 units × 2 directions = 64 output)
+Attention pooling
     ↓
-Dropout (0.15)
-    ↓
-Fully Connected Layer (10 output classes)
+Fully Connected Layer (num_classes, typically 7 after filtering)
 ```
 
 ---
@@ -48,22 +46,13 @@ Fully Connected Layer (10 output classes)
 - **Citation**: Hendrycks, D., et al. (2021). "CUAD: An Expert-Annotated NLP Dataset for Legal Contract Review." arXiv:2103.06268
 
 ### Dataset Statistics
-- **Total contracts**: 510 commercial legal agreements
-- **Total labeled clauses**: ~13,000 clause contexts
-- **Label types**: 41 different clause categories (using top 10 for this project)
-- **Annotation quality**: Expert attorney annotations
+- **Source**: CUAD v1 `label_group_xlsx/` sheets (flattened columns → rows of `context, clause_type`)
+- **Filtering**: keep classes with ≥5 samples (TOP_N=20 cap in notebook)
+- **Label types**: after filtering, typically 7–10 classes remain (varies by support)
+- **Tokens**: vocab ~2.6k; max length 11 (85th percentile); OOV ≈ 0%
 
-### Top 10 Clause Types Used
-1. Document Name
-2. Parties
-3. Agreement Date
-4. Effective Date
-5. Expiration Date
-6. Governing Law
-7. Most Favored Nation
-8. Non-Compete
-9. Exclusivity
-10. No-Solicit Of Employees
+### Clause Types Used
+- Determined at runtime by support (≥5 per class); summary is printed in the notebook after filtering.
 
 ### Privacy and Bias Validation
 ✅ **No privacy concerns**:
@@ -85,22 +74,19 @@ Fully Connected Layer (10 output classes)
 
 ## ✅ **Requirement 3: Optimizer Selection and Hyperparameter Tuning**
 
-### Optimizers Tested
-1. **Adam** (Adaptive Moment Estimation)
-   - Learning rates: 0.0005, 0.0003
-   - Weight decay: 1e-6, 0.0
+### Optimizers Tested (across runs)
+- Adam (lr 5e-4–1e-3, wd up to 1e-4)
+- RMSprop (lr 5e-4–1e-3, wd 0)
 
-2. **RMSprop** (Root Mean Square Propagation)
-   - Learning rate: 0.0005
-   - Weight decay: 0.0
+### Hyperparameter Configurations (current notebook sweep)
 
-### Hyperparameter Configurations
-
-| Config | Optimizer | Learning Rate | Weight Decay | Batch Size | Epochs | Additional Features |
-|--------|-----------|---------------|--------------|------------|--------|---------------------|
-| 1      | Adam      | 0.0005        | 1e-6         | 32         | 25     | Grad clip, LR scheduler |
-| 2      | Adam      | 0.0003        | 0.0          | 32         | 25     | Grad clip, LR scheduler |
-| 3      | RMSprop   | 0.0005        | 0.0          | 32         | 25     | Grad clip, LR scheduler |
+| Config | Optimizer | Learning Rate | Weight Decay | Batch Size | Epochs | Notes |
+|--------|-----------|---------------|--------------|------------|--------|-------|
+| 1      | Adam      | 0.0008        | 1e-4         | 64         | 5      | Grad clip 1.0, ReduceLROnPlateau |
+| 2      | Adam      | 0.0010        | 1e-4         | 64         | 10     | Grad clip 1.0, ReduceLROnPlateau |
+| 3      | Adam      | 0.0005        | 1e-4         | 64         | 5      | Grad clip 1.0, ReduceLROnPlateau |
+| 4      | RMSprop   | 0.0008        | 0.0          | 64         | 10     | Grad clip 1.0, ReduceLROnPlateau |
+| 5      | RMSprop   | 0.0005        | 0.0          | 64         | 5      | Grad clip 1.0, ReduceLROnPlateau |
 
 ### Advanced Training Features
 - **Gradient Clipping**: Max norm = 1.0 (prevents exploding gradients)
@@ -109,16 +95,7 @@ Fully Connected Layer (10 output classes)
 - **Dropout**: 0.15 (regularization)
 
 ### Training Configuration Documentation
-For each configuration, the following are recorded:
-- Optimizer type and parameters
-- Learning rate and weight decay
-- Batch size
-- Number of epochs
-- Training accuracy per epoch
-- Validation accuracy per epoch
-- Final test accuracy
-
-All results saved to: `experiment_results.csv`
+- Training/val/test metrics recorded per run; primary CSVs: `experiment_results.csv` (run1) and `experiment_results_run2.csv` (run2 and later unless renamed in the notebook).
 
 ---
 
@@ -130,10 +107,12 @@ All results saved to: `experiment_results.csv`
 - Establish minimum expected performance
 - Diagnose if low accuracy is due to model vs. data issues
 
-### Expected Performance
-- **Training Accuracy**: 60-70%
-- **Validation Accuracy**: 50-60%
-- **Test Accuracy**: 50-60% ✅ **(Target met)**
+### Observed Performance (runs 1–5)
+- Run1 (early CSV): best test acc ≈ 1–2% (`experiment_results.csv`).
+- Run2 (CSV tuned): best test acc ≈ 74.3% (RMSprop lr=8e-4, batch 64; `experiment_results_run2.csv`).
+- Run3 (CSV, tokenizer/artifacts saved): metrics CSV not recorded; artifacts/models present.
+- Run4 (XLSX pipeline): artifacts/models present; metrics currently written to `experiment_results_run2.csv` unless renamed.
+- Run5 (XLSX pipeline, latest sweep scaffolded): paths set to `trained_models_run5/`, `artifacts_run5/`; metrics not yet recorded.
 
 ### Evaluation Metrics
 - **Overall Accuracy**: Primary metric for course requirement
@@ -146,28 +125,13 @@ All results saved to: `experiment_results.csv`
 ## ✅ **Requirement 5: Documentation**
 
 ### Files Provided
-1. **README.md** — Complete project documentation
-   - Problem statement
-   - Dataset description
-   - Model architecture
-   - Methodology
-   - Tools used
-
-2. **Untitled-6.ipynb** — Training notebook with:
-   - Data loading and preprocessing
-   - Custom tokenizer implementation
-   - Model definition
-   - Training loop with all configurations
-   - Evaluation and results visualization
-
-3. **experiment_results.csv** — Hyperparameter tuning results
-   - All configurations tested
-   - Training/validation/test accuracies
-   - Optimizer and learning rate used
-
-4. **trained_models/** — Saved model checkpoints
-   - model_1.pt, model_2.pt, model_3.pt
-   - Can be loaded for inference or further evaluation
+1. **README.md** — Updated project documentation (XLSX data source, augmentation, runs summary)
+2. **Untitled-6.ipynb** — Training notebook:
+    - Loads `label_group_xlsx/` sheets, filters classes (≥5 support, TOP_N=20), optional synonym augmentation
+    - Custom tokenizer, BiLSTM+attention model, class weights/sampler
+    - Training loop with multiple optimizer configs; saves models/artifacts/results
+3. **Results CSVs** — `experiment_results.csv` (run1), `experiment_results_run2.csv` (run2 and later unless renamed)
+4. **Models/Artifacts** — `trained_models_run2/`, `trained_models_run3/`, `trained_models_run4/`, `trained_models_run5/`; artifacts in corresponding `artifacts_run*/`
 
 ### Tools Disclosed
 - **Deep Learning**: PyTorch 2.x
@@ -195,22 +159,27 @@ All results saved to: `experiment_results.csv`
 
 ## ✅ **Requirement 7: GitHub Repository**
 
-### Repository Structure
+### Repository Structure (current)
 ```
 CUAD-Contract-Clause-Classification-using-Stacked-LSTM/
-├── README.md                      # Project documentation
-├── PROJECT_REQUIREMENTS.md        # This compliance checklist
-├── Untitled-6.ipynb              # Main training notebook
-├── experiment_results.csv         # Hyperparameter tuning results
-├── trained_models/                # Saved model checkpoints
-│   ├── model_1.pt
-│   ├── model_2.pt
-│   └── model_3.pt
-└── CUAD_v1/                       # Dataset (not pushed, too large)
+├── README.md
+├── PROJECT_REQUIREMENTS.md
+├── Untitled-6.ipynb                 # Main PyTorch notebook
+├── experiment_results.csv           # Run1 metrics
+├── experiment_results_run2.csv      # Run2 metrics (also used by later runs unless renamed)
+├── trained_models_run2/             # Run2 models (.pt, .h5)
+├── artifacts_run2/                  # Run2 tokenizer/labels/confusion/reports
+├── trained_models_run3/
+├── artifacts_run3/
+├── trained_models_run4/
+├── artifacts_run4/
+├── trained_models_run5/
+├── artifacts_run5/
+└── CUAD_v1/
     ├── CUAD_v1.json
     ├── CUAD_v1_README.txt
     ├── master_clauses.csv
-    └── full_contract_txt/
+    └── label_group_xlsx/
 ```
 
 ### Repository Ready for Submission
@@ -246,6 +215,8 @@ CUAD-Contract-Clause-Classification-using-Stacked-LSTM/
 3. ✅ **Record results** — Save to experiment_results.csv
 4. ✅ **Verify accuracy** — Ensure at least one config achieves 50-60%
 5. ✅ **Push to GitHub** — Upload all files to repository
+
+*Optional*: Rename results CSV per run to avoid reuse of `experiment_results_run2.csv` in later runs.
 
 ---
 
